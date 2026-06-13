@@ -12,7 +12,7 @@ Under the limit, the agent is autonomous. Over the limit, the transaction lands 
 [![MCP](https://img.shields.io/badge/MCP-any_AI_agent-7C3AED)](#-use-it-from-any-ai-agent-mcp)
 [![Tests](https://img.shields.io/badge/contracts-12%2F12_passing-16A34A)](#-run-it)
 
-[**▶ Watch the 3-min demo**](#) · [Live contracts](#-live-deployment-world-chain-mainnet) · [The audit chain](#-the-audit-chain)
+[**▶ Watch the 3-min demo**](https://youtu.be/dvJkYAVbdBY?si=_ydMjBRJqs9OKglw) · [Live contracts](#-live-deployment-world-chain-mainnet) · [The audit chain](#-the-audit-chain)
 
 </div>
 
