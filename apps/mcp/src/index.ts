@@ -47,7 +47,8 @@ server.registerTool(
   "get_policy",
   {
     title: "Harcama policy'sini oku",
-    description: "Ajanın SpendGuard harcama policy'sini zincirden okur: işlem başına limit, günlük limit, bugün kalan. Harcama kararı vermeden önce çağır.",
+    description:
+      "SpendGuard harcama policy'sini zincirden okur. ÖNEMLİ: bu limitler yalnızca OTONOM harcamayı (insana sormadan) sınırlar — TOPLAM harcama tavanı DEĞİLDİR. Limit üstü alımlar ENGELLENMEZ; tek-dokunuş insan onayı (World ID) gerektirir ve onaylanınca o ödeme limitten bağımsız tamamlanır. Yani $80'lik bir alım, günlük limit $10 olsa bile, insan onayından sonra BAŞARIYLA gerçekleşir.",
     inputSchema: {},
   },
   async () => {
@@ -58,10 +59,13 @@ server.registerTool(
     ])) as [bigint, bigint, bigint];
     const text =
       `HumanSign harcama policy'si (vault.humansign.eth):\n` +
-      `• İşlem başına limit: $${fromUsdc(perTx)}\n` +
-      `• Günlük limit: $${fromUsdc(daily)}\n` +
-      `• Bugün kalan: $${fromUsdc(remaining)}\n` +
-      `Bu limitlerin ALTINDA otomatik öderim. ÜSTÜNDE insan onayı (World ID) gerekir.`;
+      `• Otonom işlem başına limit: $${fromUsdc(perTx)}\n` +
+      `• Otonom günlük limit: $${fromUsdc(daily)}\n` +
+      `• Bugün otonom kalan: $${fromUsdc(remaining)}\n\n` +
+      `Bu limitler "insana SORMADAN" harcayabileceğim sınırdır, toplam tavan değil:\n` +
+      `• Limit ALTI → otomatik öderim (sürtünmesiz)\n` +
+      `• Limit ÜSTÜ → DURUR, insana sorarım. İnsan World ID ile onaylarsa, ödeme limitten BAĞIMSIZ tamamlanır (onay bilinçli bir yetkilendirmedir, engel değil).\n` +
+      `Yani $80'lik premium alım da onaydan sonra kesinlikle gerçekleşir.`;
     return { content: [{ type: "text", text }] };
   }
 );
@@ -86,7 +90,7 @@ server.registerTool(
   {
     title: "Veri satın al (policy + insan onayı katmanlı)",
     description:
-      "Data provider'dan veri satın alır. Limit altıysa OTOMATİK öder; limit üstüyse kullanıcının telefonuna World ID onay isteği düşer ve onaylanana kadar bekler. Ödeme zincir üstünde (World Chain) gerçekleşir. resource: /api/quote veya /api/premium-dataset. reason: insanın onay kartında göreceği sebep.",
+      "Data provider'dan veri satın alır. Limit ALTIYSA otomatik öder. Limit ÜSTÜYSE (örn. $80 premium) kullanıcının telefonuna World ID onay isteği düşer ve onaylanana kadar bekler — onaylanınca ödeme limitten BAĞIMSIZ tamamlanır (günlük/işlem limiti onaylı ödemeyi ENGELLEMEZ; onay bir override'dır). Yani pahalı alımları çekinmeden başlat; sistem otomatik olarak insana sorar ve onaydan sonra teslim eder. Ödeme World Chain mainnet'te gerçekleşir. resource: /api/quote veya /api/premium-dataset. reason: insanın onay kartında göreceği sebep.",
     inputSchema: { resource: z.string(), reason: z.string() },
   },
   async ({ resource, reason }) => {

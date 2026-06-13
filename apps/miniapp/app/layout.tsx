@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HumanSign 🖊️",
-  description: "AI ajanlar harcar, insanlar imzalar.",
+  title: "HumanSign",
+  description: "AI agents spend, humans sign.",
 };
 
 export default function RootLayout({

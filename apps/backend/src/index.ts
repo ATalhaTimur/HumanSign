@@ -157,6 +157,11 @@ app.get("/events", (req, reply) => {
 });
 
 // ── G1 yardımcıları ───────────────────────────────────────────────
+app.post("/dev/reset", async () => {  // demo öncesi temiz başlangıç (geçmişi sil)
+  intents.clear(); broadcast();
+  return { ok: true, cleared: true };
+});
+
 app.post("/dev/fake-intent", async () => {  // Mini App'i ajan olmadan test et
   const r = await app.inject({ method: "POST", url: "/intents", payload: {
     to: ADDRESSES.seller, amount: "80000000", reason: "G1 smoke test — Q2 pazar verisi" } });

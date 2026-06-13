@@ -33,7 +33,8 @@ SpendGuard.sol  (World Chain mainnet, policy vault)
                                       research.humansign.eth → vault.humansign.eth · $80 · reason
 
 Identity:   IdentityRegistry (ERC-8004)  ◄─ text record ─►  ENS subname
-Human-proof: World ID (Orb) → "delegate-agent" action
+Human-proof: approval is signed by the user's World ID-backed World App account
+             (delegate-agent World ID action + on-chain RP configured as the human layer)
 ```
 
 **The flow in one breath:** the agent makes micro-purchases autonomously; when it reaches for the $80 premium dataset, your phone buzzes, you approve with World ID, the agent pays on-chain, the seller delivers the data — and every step is verifiable on-chain.
