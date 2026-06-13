@@ -29,9 +29,17 @@
   - ⚠️ NOT: Sepolia yerine yanlışlıkla MAINNET'te kaydedildi (~$10-15 gerçek ETH gitti) ama sonuç daha güçlü (gerçek mainnet ENS). Sepolia faucet ETH'i 0xF483'te boşta.
   - UI hâlâ `ENS_LABELS` map'i kullanıyor (07 §2.3 kasıtlı kısayol), kayıtlar zincirde gerçek.
 
-## 🔜 Kalan (bonus/cila — bende)
+## 🎉 ÜRÜNLEŞME (2026-06-13) — MCP + Mini App cila
 
-- [ ] **08 Demo/Submission** — README, demo script, kanıt linkleri (tx'ler + ENS + 8004).
+- **P1 MCP server** (`apps/mcp`) — `@modelcontextprotocol/sdk` stdio. Tools: `get_policy`, `list_catalog`, `buy_data`. Gerçek ajan (Claude Desktop) `buy_data` çağırır → limit altı otonom, limit üstü telefona onay → zincirde öder. Config: `apps/mcp/claude-desktop-config.json`. Smoke test OK.
+- **P2 Mini app cila** — onboarding (hero + 3 adım) + approvals (premium kart: ENS+avatar, policy rozeti, büyük tutar, onay state, geçmiş, worldscan linki). next build OK, tünelde canlı.
+
+## 🔜 Kalan
+
+- [x] **README** (kök `README.md`) — jüri-facing, EN, ne gerçek/ne mock + 4 kanıt linki + MCP + roadmap. ✅
+- [ ] **Demo videosu** (sen, ≤3 dk — MCP akışı: Claude Desktop → otonom → $80 → telefon onayı → rapor)
+- [ ] **ETHGlobal submission formu** — HumanSign, tagline "AI agents spend, humans sign", prize: ENS + World, "how it's made" (README'den), demo video + repo linki
+- [ ] (ops) gerçek-USDC mikro flex · World ID Orb verify v2/v4 · zkTLS bonus
 - [ ] (opsiyonel) World ID Orb `delegate-agent` verify'ı onboarding'e geri ekle (v2/v4 backend düzeltmesiyle).
 - [ ] (zaman kalırsa) zkTLS bonus.
 

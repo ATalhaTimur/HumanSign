@@ -67,34 +67,57 @@ export default function Onboarding() {
   }
 
   return (
-    <main className="p-6 space-y-4">
-      <h1 className="text-xl font-bold">HumanSign 🖊️</h1>
-      <p className="text-sm text-gray-500">AI ajanlar harcar, insanlar imzalar.</p>
-
-      {!addr && (
-        <button onClick={connect} disabled={busy} className="btn">
-          {busy ? "Bağlanıyor…" : "Cüzdanı Bağla"}
-        </button>
-      )}
-
-      {addr && !verified && (
-        <div className="space-y-2">
-          <div className="text-xs text-gray-400 font-mono break-all">{addr}</div>
-          <button onClick={delegate} disabled={busy} className="btn">
-            {busy ? "Doğrulanıyor…" : "World ID ile Ajana Yetki Ver"}
-          </button>
+    <main className="mx-auto flex min-h-full max-w-md flex-col px-6 py-10">
+      {/* hero */}
+      <div className="flex flex-1 flex-col items-center justify-center text-center">
+        <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-4xl shadow-xl shadow-fuchsia-500/20">
+          🖊️
         </div>
-      )}
+        <h1 className="text-3xl font-extrabold tracking-tight">HumanSign</h1>
+        <p className="mt-2 text-sm text-gray-500">AI ajanlar harcar, <b>insanlar imzalar.</b></p>
+        <p className="mt-1 text-xs text-gray-400">Ajan cüzdanları için policy + anlık insan onayı</p>
 
-      {/* walletAuth sonrası approvals'a geç (verify opsiyonel — World ID v4 düzeltmesi ayrı iş) */}
-      {addr && (
-        <Link href="/approvals" className="btn">
-          Onay Kuyruğu →
-        </Link>
-      )}
-      {verified && <div className="text-sm text-green-600">✅ World ID ile yetki verildi</div>}
+        {/* 3 adım */}
+        <div className="mt-8 w-full space-y-2.5 text-left">
+          <Step n="1" done={!!addr} label="Cüzdanını bağla" />
+          <Step n="2" done={verified} label="World ID ile ajana yetki ver" sub="opsiyonel" />
+          <Step n="3" done={false} label="Onay kuyruğuna geç" />
+        </div>
+      </div>
 
-      {error && <div className="text-sm text-red-500 break-all">{error}</div>}
+      {/* aksiyonlar */}
+      <div className="space-y-3 pt-8">
+        {!addr && (
+          <button onClick={connect} disabled={busy} className="btn">
+            {busy ? "Bağlanıyor…" : "Cüzdanı Bağla"}
+          </button>
+        )}
+        {addr && !verified && (
+          <button onClick={delegate} disabled={busy} className="btn !bg-white !text-black border border-gray-200">
+            {busy ? "Doğrulanıyor…" : "World ID ile Yetki Ver"}
+          </button>
+        )}
+        {addr && (
+          <Link href="/approvals" className="btn">Onay Kuyruğu →</Link>
+        )}
+        {addr && <div className="text-center text-[11px] font-mono text-gray-300 break-all">{addr}</div>}
+        {verified && <div className="text-center text-sm text-emerald-600">✅ World ID ile yetki verildi</div>}
+        {error && <div className="text-center text-sm text-red-500 break-all">{error}</div>}
+      </div>
     </main>
+  );
+}
+
+function Step({ n, label, sub, done }: { n: string; label: string; sub?: string; done: boolean }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-gray-50 px-4 py-3">
+      <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${done ? "bg-emerald-500 text-white" : "bg-gray-200 text-gray-500"}`}>
+        {done ? "✓" : n}
+      </div>
+      <div className="flex-1">
+        <div className="text-sm font-medium">{label}</div>
+        {sub && <div className="text-[11px] text-gray-400">{sub}</div>}
+      </div>
+    </div>
   );
 }

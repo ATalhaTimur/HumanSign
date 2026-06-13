@@ -1,0 +1,10 @@
+{
+  "//": "Bu bloğu Claude Desktop config'ine ekle: ~/Library/Application Support/Claude/claude_desktop_config.json",
+  "//2": "Önce backend (3001) + seller (3002) çalışıyor olmalı. Sonra Claude Desktop'ı yeniden başlat.",
+  "mcpServers": {
+    "humansign": {
+      "command": "/Users/talhatimur/Projects/HumanSign/apps/mcp/node_modules/.bin/tsx",
+      "args": ["/Users/talhatimur/Projects/HumanSign/apps/mcp/src/index.ts"]
+    }
+  }
+}
