@@ -1,0 +1,15 @@
+{
+  "name": "humansign",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "deploy:testnet": "pnpm -F contracts deploy:testnet",
+    "agent:run": "pnpm -F agent start"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0"
+  }
+}

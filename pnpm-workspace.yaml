@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Build script'i çalıştırılmayan (native) bağımlılıklar — pnpm 10 onay ister.
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver

@@ -1,0 +1,11 @@
+{
+  "name": "contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test -vv",
+    "deploy:testnet": "forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast && node ./sync-addresses.mjs",
+    "sync-abi": "node -e \"const a=require('./out/SpendGuard.sol/SpendGuard.json').abi; require('fs').writeFileSync('../shared/spendGuardAbi.ts','export const spendGuardAbi = '+JSON.stringify(a)+' as const;')\""
+  }
+}
