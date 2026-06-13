@@ -86,11 +86,13 @@ export default function Onboarding() {
         </div>
       )}
 
-      {verified && (
+      {/* walletAuth sonrası approvals'a geç (verify opsiyonel — World ID v4 düzeltmesi ayrı iş) */}
+      {addr && (
         <Link href="/approvals" className="btn">
           Onay Kuyruğu →
         </Link>
       )}
+      {verified && <div className="text-sm text-green-600">✅ World ID ile yetki verildi</div>}
 
       {error && <div className="text-sm text-red-500 break-all">{error}</div>}
     </main>

@@ -88,6 +88,23 @@ contract SpendGuardTest is Test {
         guard.executeApprovedPayment(i, sig);
         vm.stopPrank();
     }
+    function test_OnchainApprove_OK() public {
+        SpendGuard.PaymentIntent memory i = _intent(80e6, 10);
+        vm.prank(ownerEoa); guard.approveIntent(i);
+        vm.prank(agent); guard.executeApprovedPaymentOnchain(i);
+        assertEq(usdc.balanceOf(seller), 80e6);
+    }
+    function test_OnchainApprove_RevertNotApproved() public {
+        SpendGuard.PaymentIntent memory i = _intent(80e6, 11);
+        vm.prank(agent); vm.expectRevert(SpendGuard.IntentNotApproved.selector);
+        guard.executeApprovedPaymentOnchain(i);
+    }
+    function test_OnchainApprove_RevertNotOwner() public {
+        SpendGuard.PaymentIntent memory i = _intent(80e6, 12);
+        vm.prank(evil); vm.expectRevert(SpendGuard.NotOwner.selector);
+        guard.approveIntent(i);
+    }
+
     function test_Approved_RevertExpired() public {
         SpendGuard.PaymentIntent memory i = _intent(80e6, 5);
         bytes memory sig = _sign(ownerPk, i);

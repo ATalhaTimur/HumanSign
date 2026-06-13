@@ -34,6 +34,12 @@ export type PaymentIntentMessage = {
 /** Onay kartında gösterilen sebep metni → zincirdeki hash. Kart metniyle AYNI string. */
 export const hashReason = (reason: string): Hex => keccak256(stringToBytes(reason));
 
+/** B-planı (04 §6): World App `signTypedData`'yı disallow ediyor → EIP-712 digest'i
+ *  personal_sign (EIP-191) ile imzalatırız. İmzalanan mesaj; başına metin ön-eki
+ *  konularak BELİRSİZLİK önlenir (World App hex sanıp decode edemez) ve kontrat da
+ *  `Strings.toHexString` ile birebir yeniden üretebilir. TEK kaynak burada. */
+export const signedMessageForDigest = (digest: Hex): string => `HumanSign:${digest}`;
+
 export const usdc = (amountHuman: number): bigint => BigInt(Math.round(amountHuman * 1e6));
 export const fromUsdc = (amount: bigint): string => (Number(amount) / 1e6).toFixed(2);
 

@@ -2,8 +2,9 @@
 
 import { MiniKit } from "@worldcoin/minikit-js";
 import { useEffect, useState } from "react";
-import { humanSignDomain, PAYMENT_INTENT_TYPES, fromUsdc } from "@humansign/shared/eip712";
-import { CHAIN_ID, ADDRESSES } from "@humansign/shared/addresses";
+import { fromUsdc } from "@humansign/shared/eip712";
+import { ADDRESSES } from "@humansign/shared/addresses";
+import { spendGuardAbi } from "@humansign/shared/spendGuardAbi";
 import type { IntentStatus } from "@humansign/shared/intent";
 import { BACKEND_URL } from "../config";
 
@@ -32,36 +33,58 @@ export default function Approvals() {
   const [items, setItems] = useState<WireIntent[]>([]);
 
   useEffect(() => {
-    // SSE: kart anında düşsün + titreşim
-    const es = new EventSource(`${BACKEND_URL}/events`);
-    es.onmessage = (e) => {
-      const list: WireIntent[] = JSON.parse(e.data);
-      setItems(list);
-      if (list.some((i) => i.status === "pending")) navigator.vibrate?.([100, 50, 200]);
+    // Polling (SSE bazı tünellerde buffer'lanıyor → her yerde çalışan poll). Yeni pending'de titret.
+    let prevPendingIds = "";
+    let stop = false;
+    const tick = async () => {
+      try {
+        const list: WireIntent[] = await fetch(`${BACKEND_URL}/intents`, { cache: "no-store" }).then((r) => r.json());
+        if (stop) return;
+        setItems(list);
+        const pendingIds = list.filter((i) => i.status === "pending").map((i) => i.id).sort().join(",");
+        if (pendingIds && pendingIds !== prevPendingIds) navigator.vibrate?.([100, 50, 200]);
+        prevPendingIds = pendingIds;
+      } catch {
+        /* tünel/ağ hıçkırığı — sonraki tick'te toparlar */
+      }
     };
-    return () => es.close();
+    tick();
+    const id = setInterval(tick, 1500);
+    return () => { stop = true; clearInterval(id); };
   }, []);
 
   async function approve(it: WireIntent) {
-    const { finalPayload } = await MiniKit.commandsAsync.signTypedData({
-      domain: humanSignDomain(CHAIN_ID, ADDRESSES.spendGuard),
-      types: PAYMENT_INTENT_TYPES,
-      primaryType: "PaymentIntent",
-      // bigint'ler zaten string olarak geliyor (SSE) — olduğu gibi ilet
-      message: {
-        to: it.message.to,
-        amount: it.message.amount,
-        nonce: it.message.nonce,
-        deadline: it.message.deadline,
-        reasonHash: it.message.reasonHash,
-        agent: it.message.agent,
-      },
+    // On-chain onay: owner (World App hesabı) SpendGuard.approveIntent çağırır (sponsorlu tx).
+    // signTypedData/signMessage testnette smart-account doğrulanamadığı için → sendTransaction.
+    const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+      transaction: [
+        {
+          address: ADDRESSES.spendGuard,
+          abi: spendGuardAbi,
+          functionName: "approveIntent",
+          // PaymentIntent struct = tuple (to, amount, nonce, deadline, reasonHash, agent)
+          args: [
+            [
+              it.message.to,
+              it.message.amount,
+              it.message.nonce,
+              it.message.deadline,
+              it.message.reasonHash,
+              it.message.agent,
+            ],
+          ],
+        },
+      ],
     });
-    if (finalPayload.status !== "success") return;
+    if (finalPayload.status !== "success") {
+      alert("İşlem gönderilemedi: " + JSON.stringify(finalPayload));
+      return;
+    }
+    // backend zincirden onayı doğrulayıp kartı 'approved' yapsın
     await fetch(`${BACKEND_URL}/intents/${it.id}/approve`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ signature: finalPayload.signature, ownerAddress: finalPayload.address }),
+      body: JSON.stringify({ txId: finalPayload.transaction_id }),
     });
   }
 

@@ -1,0 +1,9 @@
+{
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "name": "HumanSign Research Agent",
+  "description": "Q2 pazar raporu icin veri toplayan demo ajan. Harcamalari HumanSign SpendGuard policy kasasi ile sinirli; limit ustu islemler World ID destekli insan onayi gerektirir.",
+  "ens": "research.humansign.eth",
+  "wallet": { "chainId": 480, "spendGuard": "0xCec9Ba1F8bb9AC240E2372f2A261A142868483fC", "agentKey": "0x8e38a8aC277b72074653ff653c84366e402e91A2" },
+  "humanBacking": { "method": "world-id-orb", "action": "delegate-agent" },
+  "endpoints": [{ "type": "demo", "url": "https://github.com/humansign/humansign" }]
+}

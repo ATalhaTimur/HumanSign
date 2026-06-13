@@ -36,9 +36,11 @@ contract SpendGuard is EIP712 {
 
     mapping(address => bool) public whitelist;
     mapping(uint256 => bool) public usedNonces;
+    mapping(bytes32 => bool) public approvedIntents; // on-chain onay (sendTransaction yolu)
 
     event AutoPaymentExecuted(address indexed agent, address indexed to, uint256 amount, bytes32 reasonHash);
     event ApprovedPaymentExecuted(address indexed agent, address indexed to, uint256 amount, uint256 nonce, bytes32 reasonHash);
+    event IntentApprovedOnchain(bytes32 indexed intentHash, address indexed owner);
     event PolicyUpdated(uint256 perTxLimit, uint256 dailyLimit);
     event WhitelistUpdated(address indexed target, bool allowed);
     event AgentKeyUpdated(address indexed newAgent);
@@ -53,6 +55,7 @@ contract SpendGuard is EIP712 {
     error NonceUsed();
     error IntentExpired();
     error WrongAgent();
+    error IntentNotApproved();
 
     modifier onlyOwner() { if (msg.sender != owner) revert NotOwner(); _; }
     modifier onlyAgent() { if (msg.sender != agentKey) revert NotAgent(); _; }
@@ -98,6 +101,27 @@ contract SpendGuard is EIP712 {
         // KRİTİK: SignatureChecker → EOA ise ecrecover, kontrat ise EIP-1271 isValidSignature.
         if (!SignatureChecker.isValidSignatureNow(owner, digest, ownerSig)) revert InvalidOwnerSignature();
 
+        usedNonces[i.nonce] = true;
+        token.safeTransfer(i.to, i.amount);
+        emit ApprovedPaymentExecuted(msg.sender, i.to, i.amount, i.nonce, i.reasonHash);
+    }
+
+    // ───────────── ON-CHAIN ONAY YOLU (sendTransaction — World App testnette imza desteklemiyor) ─────────────
+    /// @notice Owner (World App hesabı) intent'i zincirde onaylar. Mini App sendTransaction ile çağırır.
+    /// @dev World App smart account'u testnette deploy'lu olmadığından off-chain imza doğrulanamıyor;
+    ///      onay doğrudan on-chain durum olarak tutuluyor. msg.sender == owner (sponsorlu userOp).
+    function approveIntent(PaymentIntent calldata i) external onlyOwner {
+        bytes32 h = hashIntent(i);
+        approvedIntents[h] = true;
+        emit IntentApprovedOnchain(h, msg.sender);
+    }
+
+    /// @notice Ajan, owner'ın on-chain onayladığı intent'i öder (imza yok).
+    function executeApprovedPaymentOnchain(PaymentIntent calldata i) external onlyAgent {
+        if (i.agent != msg.sender) revert WrongAgent();
+        if (block.timestamp > i.deadline) revert IntentExpired();
+        if (usedNonces[i.nonce]) revert NonceUsed();
+        if (!approvedIntents[hashIntent(i)]) revert IntentNotApproved();
         usedNonces[i.nonce] = true;
         token.safeTransfer(i.to, i.amount);
         emit ApprovedPaymentExecuted(msg.sender, i.to, i.amount, i.nonce, i.reasonHash);

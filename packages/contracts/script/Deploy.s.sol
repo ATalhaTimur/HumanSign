@@ -17,7 +17,7 @@ contract Deploy is Script {
         SpendGuard guard = new SpendGuard(ownerAddr, agentAddr, usdc, 1e6, 10e6, wl);
         IdentityRegistry reg = new IdentityRegistry();
         usdc.mint(address(guard), 200e6);              // kasayı doldur
-        payable(agentAddr).transfer(0.02 ether);       // ajana gas
+        if (agentAddr.balance < 0.00005 ether) payable(agentAddr).transfer(0.00005 ether); // ajana gas (World Chain ~0.0015 gwei — minik yeter)
         vm.stopBroadcast();
 
         console2.log("MOCK_USDC_ADDRESS=", address(usdc));

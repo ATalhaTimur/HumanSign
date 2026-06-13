@@ -150,3 +150,6 @@ packages/contracts/broadcast/
 
 # Turbo
 .turbo
+
+# MCP (içinde API token var — commit etme; re-add komutu TODO.md'de)
+.mcp.json
