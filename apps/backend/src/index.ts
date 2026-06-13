@@ -37,7 +37,7 @@ const nonces = new Set<string>();
 app.get("/auth/nonce", async () => { const n = uuid().replace(/-/g, ""); nonces.add(n); return { nonce: n }; });
 
 app.post("/auth/siwe-verify", async (req, reply) => {
-  // Hackathon-basit: nonce kontrolü + adresi kaydet. (Prod: tam SIWE imza doğrulaması)
+  // Lightweight: validate nonce + record the address. (Production: full SIWE signature verification.)
   const { payload, nonce } = req.body as any;
   if (!nonces.delete(nonce)) return reply.code(400).send({ error: "bad nonce" });
   app.log.info({ owner: payload.address }, "wallet connected");
@@ -164,7 +164,7 @@ app.post("/dev/reset", async () => {  // demo öncesi temiz başlangıç (geçmi
 
 app.post("/dev/fake-intent", async () => {  // Mini App'i ajan olmadan test et
   const r = await app.inject({ method: "POST", url: "/intents", payload: {
-    to: ADDRESSES.seller, amount: "80000000", reason: "G1 smoke test — Q2 pazar verisi" } });
+    to: ADDRESSES.seller, amount: "80000000", reason: "Q2 premium market dataset" } });
   return r.json();
 });
 

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.24;
 import {ERC721URIStorage, ERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
-/// @notice ERC-8004 Identity Registry'nin minimal, hackathon-dürüst implementasyonu.
-/// (Reputation/Validation registry'leri kapsam dışı — README'de belirt.)
+/// @notice Minimal ERC-8004 Identity Registry.
+/// @dev Reputation/Validation registries are out of scope for this implementation.
 contract IdentityRegistry is ERC721URIStorage {
     uint256 public nextId = 1;
     event Registered(uint256 indexed agentId, string agentURI, address indexed owner);

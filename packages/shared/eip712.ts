@@ -10,7 +10,7 @@ export const humanSignDomain = (chainId: number, verifyingContract: Address) => 
   verifyingContract,
 }) as const;
 
-/** Kontrattaki struct ile ALAN SIRASI DAHİL birebir aynı. Dokunma. */
+/** Matches the contract struct exactly, including field order. */
 export const PAYMENT_INTENT_TYPES = {
   PaymentIntent: [
     { name: "to", type: "address" },
@@ -31,14 +31,8 @@ export type PaymentIntentMessage = {
   agent: Address;
 };
 
-/** Onay kartında gösterilen sebep metni → zincirdeki hash. Kart metniyle AYNI string. */
+/** Human-readable reason shown on the approval card → its on-chain hash (same string). */
 export const hashReason = (reason: string): Hex => keccak256(stringToBytes(reason));
-
-/** B-planı (04 §6): World App `signTypedData`'yı disallow ediyor → EIP-712 digest'i
- *  personal_sign (EIP-191) ile imzalatırız. İmzalanan mesaj; başına metin ön-eki
- *  konularak BELİRSİZLİK önlenir (World App hex sanıp decode edemez) ve kontrat da
- *  `Strings.toHexString` ile birebir yeniden üretebilir. TEK kaynak burada. */
-export const signedMessageForDigest = (digest: Hex): string => `HumanSign:${digest}`;
 
 export const usdc = (amountHuman: number): bigint => BigInt(Math.round(amountHuman * 1e6));
 export const fromUsdc = (amount: bigint): string => (Number(amount) / 1e6).toFixed(2);
