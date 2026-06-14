@@ -153,3 +153,9 @@ packages/contracts/broadcast/
 
 # MCP (içinde API token var — commit etme; re-add komutu TODO.md'de)
 .mcp.json
+
+# Pitch konuşma metni — içeri ait, public repo'da gözükmesin
+docs/PITCH-SCRIPT.md
+
+# macOS
+.DS_Store
