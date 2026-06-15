@@ -7,6 +7,7 @@ export interface StoredIntent {
   id: string;                 // uuid
   message: PaymentIntentMessage;
   reason: string;             // insan-okunur (hash'in kaynağı)
+  intentHash: `0x${string}`;  // EIP-712 digest — ödemeyi benzersiz tanımlar; World ID proof'una signal olarak gömülür
   toLabel: string;            // "data-provider.humansign.eth"
   agentLabel: string;         // "research.humansign.eth"
   status: IntentStatus;

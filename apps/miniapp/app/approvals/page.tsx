@@ -1,6 +1,6 @@
 "use client";
 
-import { MiniKit } from "@worldcoin/minikit-js";
+import { MiniKit, VerificationLevel } from "@worldcoin/minikit-js";
 import { useEffect, useRef, useState } from "react";
 import { fromUsdc } from "@humansign/shared/eip712";
 import { ADDRESSES } from "@humansign/shared/addresses";
@@ -14,6 +14,7 @@ type WireIntent = {
   id: string;
   message: { to: `0x${string}`; amount: string; nonce: string; deadline: string; reasonHash: `0x${string}`; agent: `0x${string}` };
   reason: string;
+  intentHash: `0x${string}`;
   toLabel: string;
   agentLabel: string;
   status: IntentStatus;
@@ -36,6 +37,7 @@ function ExtLink() {
 export default function Approvals() {
   const [items, setItems] = useState<WireIntent[]>([]);
   const [busyId, setBusyId] = useState<string>();
+  const [verified, setVerified] = useState<Record<string, unknown>>({}); // intentId → World ID proof (kimlik kanıtlandı)
   const [notif, setNotif] = useState<{ amount: string; to: string } | null>(null);
   const notifTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -67,7 +69,29 @@ export default function Approvals() {
     return () => { stop = true; clearInterval(id); clearTimeout(notifTimer.current); };
   }, []);
 
+  // ADIM 1 — KİMLİK KANITI: "bu gerçekten doğrulanmış insan mı?" World ID + Face ID.
+  // signal = intentHash → kanıt TAM BU ödemeye kilitli. (İki MiniKit komutunu aynı tap'te
+  // zincirleyince World App ikinci sheet'i düşürüyor → ayrı tap'lere böldük.)
+  async function verifyHuman(it: WireIntent) {
+    setBusyId(it.id);
+    try {
+      const { finalPayload } = await MiniKit.commandsAsync.verify({
+        action: "approve-payment",
+        signal: it.intentHash,
+        verification_level: VerificationLevel.Device, // Face ID/biyometrik; herkeste çalışır (Orb'a 1 satırla çevrilir)
+      });
+      if (finalPayload.status !== "success") {
+        alert("Identity verification failed: " + JSON.stringify(finalPayload));
+        return;
+      }
+      setVerified((s) => ({ ...s, [it.id]: finalPayload })); // kimlik kanıtlandı → ADIM 2 açılır
+    } finally { setBusyId(undefined); }
+  }
+
+  // ADIM 2 — ON-CHAIN ONAY: kimlik kanıtlandıktan sonra owner approveIntent tx'i (gas sponsorlu).
   async function approve(it: WireIntent) {
+    const proof = verified[it.id];
+    if (!proof) return verifyHuman(it); // önce kimlik kanıtı
     setBusyId(it.id);
     try {
       const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
@@ -77,9 +101,11 @@ export default function Approvals() {
         }],
       });
       if (finalPayload.status !== "success") { alert("Transaction failed to send: " + JSON.stringify(finalPayload)); return; }
+
+      // backend: kimlik kanıtını (ödemeye bağlı) + on-chain onayı kaydeder
       await fetch(`${BACKEND_URL}/intents/${it.id}/approve`, {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ txId: finalPayload.transaction_id }),
+        body: JSON.stringify({ txId: finalPayload.transaction_id, proof, signal: it.intentHash }),
       });
     } finally { setBusyId(undefined); }
   }
@@ -156,10 +182,14 @@ export default function Approvals() {
                 Reject
               </button>
               <button onClick={() => approve(it)} disabled={busy} className="flex-1 rounded-2xl bg-black py-3.5 text-sm font-semibold text-white disabled:opacity-60">
-                {busy ? "Signing…" : "Approve"}
+                {busy ? (verified[it.id] ? "Confirming…" : "Verifying…") : (verified[it.id] ? "Confirm payment" : "Verify it's you")}
               </button>
             </div>
-            <p className="text-center text-[11px] text-gray-300">World ID-backed · cryptographic proof on-chain</p>
+            <p className="text-center text-[11px] text-gray-300">
+              {verified[it.id]
+                ? "Identity verified with World ID · confirm on-chain"
+                : "Prove it's really you with World ID before approving"}
+            </p>
           </div>
         );
       })}

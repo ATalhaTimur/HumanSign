@@ -23,6 +23,15 @@ await app.register(cors, { origin: true });
 const pub = createPublicClient({ transport: http(process.env.RPC_URL!) });
 const intents = new Map<string, StoredIntent>();
 const sseClients = new Set<(data: string) => void>();
+
+// EIP-712 digest = kontrat hashIntent = ödemenin benzersiz hash'i (World ID proof'unun signal'i)
+const intentDigest = (message: StoredIntent["message"]) =>
+  hashTypedData({
+    domain: humanSignDomain(CHAIN_ID, ADDRESSES.spendGuard),
+    types: PAYMENT_INTENT_TYPES,
+    primaryType: "PaymentIntent",
+    message,
+  });
 const broadcast = () => {
   const list = [...intents.values()].sort((a, b) => b.createdAt - a.createdAt);
   const payload = JSON.stringify(list, (_, v) => typeof v === "bigint" ? v.toString() : v);
@@ -56,17 +65,19 @@ app.post("/auth/worldid-verify", async (req, reply) => {
 app.post("/intents", async (req, reply) => {
   const body = createIntentSchema.parse(req.body);
   const id = uuid();
+  const message = {
+    to: body.to as `0x${string}`,
+    amount: BigInt(body.amount),
+    nonce: newNonce(),
+    deadline: deadlineIn(300),
+    reasonHash: hashReason(body.reason),
+    agent: ADDRESSES.agent,
+  };
   const it: StoredIntent = {
     id,
-    message: {
-      to: body.to as `0x${string}`,
-      amount: BigInt(body.amount),
-      nonce: newNonce(),
-      deadline: deadlineIn(300),
-      reasonHash: hashReason(body.reason),
-      agent: ADDRESSES.agent,
-    },
+    message,
     reason: body.reason,
+    intentHash: intentDigest(message),
     toLabel: ENS_LABELS[body.to] ?? body.to,
     agentLabel: ENS_LABELS[ADDRESSES.agent] ?? "agent",
     status: "pending",
@@ -95,15 +106,28 @@ app.post("/intents/:id/approve", async (req, reply) => {
     return reply.code(503).send({ error: "kontratlar deploy edilmedi (addresses.ts placeholder)" });
   }
 
-  // On-chain onay yolu (sendTransaction): owner World App'ten approveIntent çağırdı.
+  const digest = it.intentHash;
+
+  // 1) PROOF-OF-HUMAN, ÖDEMEYE BAĞLI: doğrulanmış tekil bir insan TAM BU ödemeyi onayladı.
+  //    signal = intentHash → World ID proof'u bu ödemeye kilitli; başka ödeme için kullanılamaz.
+  //    NOT: cloud verify best-effort loglanır; NİHAİ gate on-chain approveIntent (aşağıda).
+  //    (App World ID 4.0/RP; verifyCloudProof v2 — proof signal'e bağlı, doğrulama log'a.)
+  const { proof, signal } = (req.body ?? {}) as { proof?: ISuccessResult; signal?: string };
+  if (proof && signal) {
+    const signalBound = signal === digest;
+    try {
+      const human = await verifyCloudProof(proof, process.env.WORLD_APP_ID as `app_${string}`, "approve-payment", signal);
+      if (signalBound && human.success)
+        app.log.info({ id: it.id, nullifier: proof.nullifier_hash }, "✅ VERIFIED HUMAN — bu ödemeyi onayladı (World ID, signal-bound)");
+      else
+        app.log.warn({ id: it.id, signalBound, detail: human }, "⚠️ World ID cloud-verify geçmedi (signal proof'a gömülü; on-chain gate ile devam)");
+    } catch (e) {
+      app.log.warn({ id: it.id, e: String(e) }, "⚠️ World ID verify hata (on-chain gate ile devam)");
+    }
+  }
+
+  // 2) ON-CHAIN onay (sendTransaction): owner World App'ten approveIntent çağırdı.
   // Backend zincirden onayı DOĞRULAR (backend'e güven yok — kontrat nihai kaynak).
-  // intentHash = kontrat hashIntent = EIP-712 _hashTypedDataV4 = viem hashTypedData
-  const digest = hashTypedData({
-    domain: humanSignDomain(CHAIN_ID, ADDRESSES.spendGuard),
-    types: PAYMENT_INTENT_TYPES,
-    primaryType: "PaymentIntent",
-    message: it.message,
-  });
   // World App sponsorlu tx'i mine olana dek poll et (~30s)
   let approved = false;
   for (let k = 0; k < 20; k++) {
